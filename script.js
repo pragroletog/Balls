@@ -1,13 +1,16 @@
-
 var balls = []
 
-var g = -900/100;
+var g = 10/100;
+var gang = 90*Math.PI/180
+var gosc = 0;
 
 var play = true;
 
 var omx; var omy;
 var mx; var my;
 var mspd; var mang;
+
+var ind = 0;
 
 var cnvs = document.getElementById('cnvs')
 var scale = window.devicePixelRatio;
@@ -26,7 +29,7 @@ class Ball{
         this.y = y;
         this.rad = rad;
         this.ang = -ang*Math.PI/180;
-        console.log(this.ang);
+        //console.log(this.ang);
         this.spd = spd/100;
         this.mass = m;
 
@@ -41,9 +44,9 @@ class Ball{
 
     }
 
-    move(){
-        var b = (Math.cos(this.ang)*this.spd)
-        var h = Math.sin(this.ang)*this.spd+g*0.01;
+    move(ga){
+        var b = (Math.cos(this.ang)*this.spd)+g*Math.cos(ga)
+        var h = Math.sin(this.ang)*this.spd+g*Math.sin(ga);
         this.spd = Math.sqrt(b**2+h**2);
         this.ang = Math.atan(h/b);
         if (h<0 && b<0){
@@ -54,6 +57,11 @@ class Ball{
         }
         this.x += Math.cos(this.ang)*this.spd;
         this.y += Math.sin(this.ang)*this.spd;
+
+        if (ind%100 == 0){
+            console.log(this.x);
+        }
+        ind++;
     }
     update(){
         this.elm.style.width = this.rad*2;
@@ -84,11 +92,13 @@ class Ball{
     traceForward(time){
         var dball = new Ball(this.x, this.y, this.rad, -this.ang*180/Math.PI, this.spd*100, this.m);
         dball.elm.remove();
+        var ngang = gang
         clearCanvas();
         ctx.beginPath();
         ctx.moveTo(dball.x+dball.rad, dball.y+dball.rad);
         for (var i = 0; i < time; i++){
-            dball.move();
+            ngang = (ngang*180/Math.PI+gosc)*Math.PI/180
+            dball.move(ngang);
             dball.collide();
             ctx.lineTo(dball.x+dball.rad, dball.y+dball.rad)
             ctx.stroke();
@@ -109,6 +119,7 @@ function summon(){
     <input id="mass" placeholder="Mass:">
     <input id="xpop" placeholder="Position-x(px):">
     <input id="ypop" placeholder="Position-y(px):">
+    <p>Keep values empty for default settings</p>
     <button onclick="spawn()">Summon</button>
     `
     document.body.appendChild(popup);
@@ -123,8 +134,8 @@ function spawn(){
     var radius = document.getElementById("radt").value;
     //console.log(initx, inity);
     if (initx == "" || inity == ""){
-        initx = 50;
-        inity = 50;
+        initx = window.innerWidth/2-radius;
+        inity = window.innerHeight/2 -radius;
     }
     if (radius == ""){
         radius = 25;
@@ -146,9 +157,11 @@ function spawn(){
 }
 setInterval(()=>{
     if (play){
+        gang = (gang*180/Math.PI+gosc)*Math.PI/180
+
         for (var i = 0; i < balls.length; i++){
             if (balls[i] != held[0]){
-                balls[i].move();
+                balls[i].move(gang);
                 
             }
             balls[i].collide();
@@ -169,7 +182,7 @@ setInterval(()=>{
             else if (my-omy>0 && mx-omx<0){
                 mang = Math.PI+mang;
             }
-            console.log(mang*180/Math.PI);
+            //console.log(mang*180/Math.PI);
         }
         omx = mx; omy = my;
 
@@ -216,6 +229,7 @@ function traceForPop(){
     <h3>Trace Forward</h3>
     <input id="tracet" placeholder="Trace forward to [time(s)]:" />
     <input id="traceball" placeholder="Ball number:" />
+    <p>Don't enter values for default settings</p>
     <button onclick="traceForward()">Predict</button>
     `
     document.body.appendChild(popup);
@@ -227,14 +241,23 @@ function tracePop(){
     <h3>Normal Trace</h3>
     <input id="tracet" placeholder="Trace forward to [time(s)]:" />
     <input id="traceball" placeholder="Ball number:" />
+    <p>Don't enter values for default settings</p>
     <button onclick="trace()">Predict</button>
     `
     document.body.appendChild(popup);
 }
 
 function traceForward(){
-    traceForwTime = parseFloat(document.getElementById("tracet").value)*100;
-    traceForBall = parseInt(document.getElementById("traceball").value)-1;
+    traceForwTimep = parseFloat(document.getElementById("tracet").value);
+    traceForBallp = parseInt(document.getElementById("traceball").value);
+    if (isNaN(traceForwTimep)){
+        traceForwTimep = 2;
+    }
+    if(isNaN(traceForBallp)){
+        traceForBallp = 1;
+    }
+    traceForwTime = traceForwTimep*100;
+    traceForBall = traceForBallp-1;
     traceForw = true;
     document.body.removeChild(document.getElementById("popup"));
 }
@@ -242,7 +265,8 @@ function trace(){
     traceTime = parseFloat(document.getElementById("tracet").value)*100;
     traceForBall = parseInt(document.getElementById("traceball").value)-1;
 }
-function clearCanvas(){
+function Clear(){
+    
     ctx.clearRect(0, 0, cnvs.width, cnvs.height);
 }
 function stopTracing(){
@@ -253,4 +277,35 @@ function stopTracing(){
 
 function playpause(){
     play = !play;
+}
+
+function settingsdrop(){
+    var popup = document.createElement("div");
+    popup.id = "popup";
+    popup.innerHTML = `
+    <h3>Settings</h3>
+    <input id="g" placeholder="Gravity(px/s^2):" />
+    <input id="gang" placeholder="Angle of gravity(deg):" />
+    <input id="gosc" placeholder="Gravity angular velocity(deg/10ms):" style="width:250px">
+    <p>Don't enter values for default settings</p>
+    <button onclick="settings()">Update</button>
+    `
+    document.body.appendChild(popup);
+}
+function settings(){
+    gp = parseFloat(document.getElementById("g").value);
+    gangp = parseFloat(document.getElementById("gang").value);
+    goscp = parseFloat(document.getElementById("gosc").value);
+    if (isNaN(gp)){
+        console.log("ndlkendlke");
+        gp = 10
+    }
+    if (isNaN(gangp)){
+        gangp = 90
+    }
+    if (isNaN(goscp)){
+        goscp = 0;
+    }
+    g = gp/100; gang = gangp*Math.PI/180; gosc = goscp;
+    document.getElementById("popup").remove();
 }

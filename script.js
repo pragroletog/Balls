@@ -292,6 +292,7 @@ function settingsdrop(){
     `
     document.body.appendChild(popup);
 }
+//set
 function settings(){
     gp = parseFloat(document.getElementById("g").value);
     gangp = parseFloat(document.getElementById("gang").value);

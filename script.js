@@ -93,7 +93,7 @@ class Ball{
         var dball = new Ball(this.x, this.y, this.rad, -this.ang*180/Math.PI, this.spd*100, this.m);
         dball.elm.remove();
         var ngang = gang
-        clearCanvas();
+        ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
         ctx.beginPath();
         ctx.moveTo(dball.x+dball.rad, dball.y+dball.rad);
         for (var i = 0; i < time; i++){
@@ -266,7 +266,7 @@ function trace(){
     traceForBall = parseInt(document.getElementById("traceball").value)-1;
 }
 function Clear(){
-    
+
     ctx.clearRect(0, 0, cnvs.width, cnvs.height);
 }
 function stopTracing(){

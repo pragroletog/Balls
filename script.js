@@ -9,8 +9,12 @@ var play = true;
 var omx; var omy;
 var mx; var my;
 var mspd; var mang;
+var collrad = 10;
+var coll = null;
+var collt = document.getElementById("collt");
 
 var ind = 0;
+var popupt = false;
 
 var cnvs = document.getElementById('cnvs')
 var scale = window.devicePixelRatio;
@@ -57,11 +61,6 @@ class Ball{
         }
         this.x += Math.cos(this.ang)*this.spd;
         this.y += Math.sin(this.ang)*this.spd;
-
-        if (ind%100 == 0){
-            console.log(this.x);
-        }
-        ind++;
     }
     update(){
         this.elm.style.width = this.rad*2;
@@ -88,6 +87,32 @@ class Ball{
             this.ang *= -1;
             this.y = 0;
         }
+        if (coll != null){
+            var relx = this.x+this.rad-mx; var rely = this.y+this.rad-my;
+            var dis = Math.sqrt((relx)**2+(rely)**2)
+            if (dis <= collrad+this.rad){
+                console.log(rely/relx);
+                this.x = (collrad+this.rad)*relx/dis+mx-this.rad;
+                this.y = (collrad+this.rad)*rely/dis+my-this.rad;
+                var lineang = -Math.atan(relx/rely);
+                this.ang = 2*lineang-this.ang;
+
+                /*
+                var perpen;
+                if (rely < 0){
+                    perpen = lineang-Math.PI/2;
+                }
+                else{
+                    perpen = lineang+Math.PI/2;
+                }
+                var perpenspd = Math.cos(perpen-mang)*mspd;
+                this.spd = this.spd**2+perpenspd**2-2*this.spd*perpenspd*Math.cos(this.ang-perpen);
+                */
+            }
+
+
+        }
+        
     }
     traceForward(time){
         var dball = new Ball(this.x, this.y, this.rad, -this.ang*180/Math.PI, this.spd*100, this.m);
@@ -109,23 +134,28 @@ class Ball{
 }
 var t = true;
 function summon(){
-    var popup = document.createElement("div");
-    popup.id = "popup";
-    popup.innerHTML = `
-    <h3>Summon a ball</h3>
-    <input id="radt" placeholder="Radius(in px):" />
-    <input id="anglet" placeholder="Angle(in deg):" />
-    <input id="spdt" placeholder="Throw Speed(px/s):" >
-    <input id="mass" placeholder="Mass:">
-    <input id="xpop" placeholder="Position-x(px):">
-    <input id="ypop" placeholder="Position-y(px):">
-    <p>Keep values empty for default settings</p>
-    <button onclick="spawn()">Summon</button>
-    `
-    document.body.appendChild(popup);
+    if (!popupt){
+        var popup = document.createElement("div");
+        popupt = true;
+        popup.id = "popup";
+        popup.innerHTML = `
+        <h3>Summon a ball</h3>
+        <input id="radt" placeholder="Radius(in px):" />
+        <input id="anglet" placeholder="Angle(in deg):" />
+        <input id="spdt" placeholder="Throw Speed(px/s):" >
+        <input id="mass" placeholder="Mass:">
+        <input id="xpop" placeholder="Position-x(px):">
+        <input id="ypop" placeholder="Position-y(px):">
+        <p>Keep values empty for default settings</p>
+        <button onclick="spawn()">Summon</button>
+        <button onclick = "clearPopup()">Exit</button>
+        `
+        document.body.appendChild(popup);
+    }
 }
 
 function spawn(){
+    popupt = false;
     var initx = document.getElementById("xpop").value;
     var inity = document.getElementById("ypop").value;
     var ang = document.getElementById("anglet").value;
@@ -153,9 +183,12 @@ function spawn(){
     //console.log("jbkjnkjhlijik");
     var ballss = new Ball(parseInt(initx), parseInt(inity), radius, ang, initspd, mass);
     balls.push(ballss);
-    document.body.removeChild(document.getElementById("popup"));
+    clearPopup();
 }
 setInterval(()=>{
+    for (var i = 0; i < balls.length; i++){
+        balls[i].update();
+    }
     if (play){
         gang = (gang*180/Math.PI+gosc)*Math.PI/180
 
@@ -165,15 +198,16 @@ setInterval(()=>{
                 
             }
             balls[i].collide();
-            //balls[i].rad+=0.1
             balls[i].update();
         }
-        
-        if (held[0] != null){
-            held[0].x = mx-held[0].rad;
-            held[0].y = my-held[0].rad;
+        if (mx-omx == 0 && my-omy == 0){
+            setTimeout(()=>{
+                mspd = 0
+            }, 100)
         }
-        mspd = Math.sqrt((mx-omx)**2+(my-omy)**2);
+        else{
+            mspd = Math.sqrt((mx-omx)**2+(my-omy)**2);
+        }
         if (my-omy != mx-omx){
             mang = Math.atan((my-omy)/(mx-omx));
             if (my-omy<0 && mx-omx<0){
@@ -196,10 +230,18 @@ var held = [];
 
 document.addEventListener("mousemove", (e)=>{
     mx = e.clientX; my = e.clientY;
-
+    if (coll != null){
+        coll.style.left = (mx - collrad)+"px";
+        coll.style.top = (my - collrad)+"px";
+    }
+    if (held[0] != null){
+        held[0].x = mx-held[0].rad;
+        held[0].y = my-held[0].rad;
+    }
 })
 
 document.addEventListener("mousedown", (e)=>{
+    var hold = false;
     for (var i = 0; i < balls.length; i++){
         var ball = balls[i];
         var apx = ball.x+ball.rad; var apy = ball.y+ball.rad;
@@ -209,8 +251,18 @@ document.addEventListener("mousedown", (e)=>{
             //console.log("djbecjsjbdvndfb")
             ball.spd = 0;
             held[0] = ball;
+            hold = true;
             break;
         }
+    }
+    if (!hold && my > 50 && !popupt && coll == null && collt.checked){
+        coll = document.createElement("div");
+        coll.id="coll";
+        coll.style.left = (mx - collrad)+"px";
+        coll.style.top = (my - collrad)+"px";
+        coll.style.width = collrad*2+"px";
+        coll.style.height = collrad*2+"px";
+        document.body.appendChild(coll);
     }
 })
 
@@ -220,19 +272,27 @@ document.addEventListener("mouseup", (e)=>{
         //held[0].x = mx; held[0].y = my;
         held.pop();
     }
+    if (coll!=null){
+        coll.remove();
+        coll = null;
+    }
 })
 
 function traceForPop(){
-    var popup = document.createElement("div");
-    popup.id = "popup";
-    popup.innerHTML = `
-    <h3>Trace Forward</h3>
-    <input id="tracet" placeholder="Trace forward to [time(s)]:" />
-    <input id="traceball" placeholder="Ball number:" />
-    <p>Don't enter values for default settings</p>
-    <button onclick="traceForward()">Predict</button>
-    `
-    document.body.appendChild(popup);
+    if (!popupt){
+        var popup = document.createElement("div");
+        popup.id = "popup";
+        popupt = true;
+        popup.innerHTML = `
+        <h3>Trace Forward</h3>
+        <input id="tracet" placeholder="Trace forward to [time(s)]:" />
+        <input id="traceball" placeholder="Ball number:" />
+        <p>Don't enter values for default settings</p>
+        <button onclick="traceForward()">Predict</button>
+        <button onclick = "clearPopup()">Exit</button>
+        `
+        document.body.appendChild(popup);
+    }
 }
 function tracePop(){
     var popup = document.createElement("div");
@@ -243,6 +303,7 @@ function tracePop(){
     <input id="traceball" placeholder="Ball number:" />
     <p>Don't enter values for default settings</p>
     <button onclick="trace()">Predict</button>
+    <button onclick = "clearPopup()">Exit</button>
     `
     document.body.appendChild(popup);
 }
@@ -250,6 +311,7 @@ function tracePop(){
 function traceForward(){
     traceForwTimep = parseFloat(document.getElementById("tracet").value);
     traceForBallp = parseInt(document.getElementById("traceball").value);
+    popupt = false;
     if (isNaN(traceForwTimep)){
         traceForwTimep = 2;
     }
@@ -259,15 +321,11 @@ function traceForward(){
     traceForwTime = traceForwTimep*100;
     traceForBall = traceForBallp-1;
     traceForw = true;
-    document.body.removeChild(document.getElementById("popup"));
+    clearPopup();
 }
 function trace(){
     traceTime = parseFloat(document.getElementById("tracet").value)*100;
     traceForBall = parseInt(document.getElementById("traceball").value)-1;
-}
-function Clear(){
-
-    ctx.clearRect(0, 0, cnvs.width, cnvs.height);
 }
 function stopTracing(){
     clearCanvas();
@@ -280,20 +338,24 @@ function playpause(){
 }
 
 function settingsdrop(){
-    var popup = document.createElement("div");
-    popup.id = "popup";
-    popup.innerHTML = `
-    <h3>Settings</h3>
-    <input id="g" placeholder="Gravity(px/s^2):" />
-    <input id="gang" placeholder="Angle of gravity(deg):" />
-    <input id="gosc" placeholder="Gravity angular velocity(deg/10ms):" style="width:250px">
-    <p>Don't enter values for default settings</p>
-    <button onclick="settings()">Update</button>
-    `
-    document.body.appendChild(popup);
+    if (!popupt){
+        var popup = document.createElement("div");
+        popup.id = "popup";
+        popupt = true;
+        popup.innerHTML = `
+        <h3>Settings</h3>
+        <input id="g" placeholder="Gravity(px/s^2):" />
+        <input id="gang" placeholder="Angle of gravity(deg):" />
+        <input id="gosc" placeholder="Gravity angular velocity(deg/10ms):" style="width:250px">
+        <p>Don't enter values for default settings</p>
+        <button onclick="settings()">Update</button>
+        <button onclick = "clearPopup()">Exit</button>
+        `
+        document.body.appendChild(popup);
+    }
 }
-//set
 function settings(){
+    popupt = false;
     gp = parseFloat(document.getElementById("g").value);
     gangp = parseFloat(document.getElementById("gang").value);
     goscp = parseFloat(document.getElementById("gosc").value);
@@ -308,5 +370,16 @@ function settings(){
         goscp = 0;
     }
     g = gp/100; gang = gangp*Math.PI/180; gosc = goscp;
-    document.getElementById("popup").remove();
+    clearPopup();
+}
+
+function clearPopup(){
+    popupt = false;
+    while (true){
+        var popup = document.getElementById("popup");
+        if (popup == null){
+            break;
+        }
+        popup.remove();
+    }
 }

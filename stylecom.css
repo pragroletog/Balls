@@ -47,3 +47,12 @@ body{
     height: 100%;
 
 }
+#coll{
+    background-color: black;
+    border-radius: 100000000px;
+    position: absolute;
+}
+
+body{
+    user-select: none;
+}

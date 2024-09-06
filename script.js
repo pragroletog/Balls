@@ -200,14 +200,7 @@ setInterval(()=>{
             balls[i].collide();
             balls[i].update();
         }
-        if (mx-omx == 0 && my-omy == 0){
-            setTimeout(()=>{
-                mspd = 0
-            }, 100)
-        }
-        else{
-            mspd = Math.sqrt((mx-omx)**2+(my-omy)**2);
-        }
+        mspd = Math.sqrt((mx-omx)**2+(my-omy)**2);
         if (my-omy != mx-omx){
             mang = Math.atan((my-omy)/(mx-omx));
             if (my-omy<0 && mx-omx<0){

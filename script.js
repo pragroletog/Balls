@@ -59,7 +59,7 @@ class Ball{
         else if (h>0 && b<0){
             this.ang += Math.PI;
         }
-        this.x += Math.cos(this.ang)*this.spd*1/100;
+        this.x += Math.cos(this.ang)*this.spd;
         this.y += Math.sin(this.ang)*this.spd*1/100;
     }
     update(){
@@ -362,7 +362,7 @@ function settings(){
     if (isNaN(goscp)){
         goscp = 0;
     }
-    g = gp/100; gang = gangp*Math.PI/180; gosc = goscp;
+    g = gp/10000; gang = gangp*Math.PI/180; gosc = goscp;
     clearPopup();
 }
 

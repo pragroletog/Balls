@@ -59,8 +59,8 @@ class Ball{
         else if (h>0 && b<0){
             this.ang += Math.PI;
         }
-        this.x += Math.cos(this.ang)*this.spd;
-        this.y += Math.sin(this.ang)*this.spd;
+        this.x += Math.cos(this.ang)*this.spd*1/100;
+        this.y += Math.sin(this.ang)*this.spd*1/100;
     }
     update(){
         this.elm.style.width = this.rad*2;
